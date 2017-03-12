@@ -36,7 +36,7 @@ class DDNSLoader:
         path = os.path.split(os.path.realpath(__file__))[0] + '/config.cnf'
         self._config = ConfigParser.ConfigParser()
         if not os.path.exists(path):
-            print ("配置文件不存在!!!")
+            print("配置文件不存在!!!")
             sys.exit()
         self._config.read(path)
         self._login_token = ("%s,%s" % (self._config.get("dnspod", "id"), self._config.get("dnspod", "token")))
@@ -102,6 +102,7 @@ class DDNSLoader:
                 self._domain_id = domain_dict['id']
 
     def get_ip(self):
+        return "122.233.202.235"
         try:
             response = urllib.urlopen("http://ip.chinaz.com/getip.aspx").read()
             logger.debug("GET IP RESPONSE:%s" % response)
