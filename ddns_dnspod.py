@@ -169,6 +169,8 @@ class DDNSLoader:
                     logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, self._current_ip, ip))
                 else:
                     logger.info("[DNSPOD]REFRESH DDNS FAIL")
+
+            self._current_ip = ip
         else:
             logger.debug("SAME IP [%s]. DON'T NEED UPLOAD" % ip)
 
