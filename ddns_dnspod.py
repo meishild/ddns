@@ -102,9 +102,9 @@ class DDNSLoader:
             if self._config.get("config", "domain") == domain_dict['punycode']:
                 self._domain_id = domain_dict['id']
 
-    def get_ip(self):
+    def _get_ip(self, url):
         try:
-            response = urllib.urlopen("http://ip.chinaz.com/getip.aspx").read()
+            response = urllib.urlopen(url).read()
             logger.debug("GET IP RESPONSE:%s" % response)
             pattern = re.compile(r'(?<![\.\d])(?:\d{1,3}\.){3}\d{1,3}(?![\.\d])')
             find_list = pattern.findall(response)
@@ -116,6 +116,20 @@ class DDNSLoader:
         except Exception as e:
             logger.error("[GET IP ERROR]" + e.message)
             return None
+
+    def get_id(self):
+        ip_get_list = [
+            "http://ip.chinaz.com/getip.aspx",
+            "http://checkip.dyndns.org",
+            "http://ip.taobao.com/service/getIpInfo2.php?ip=myip"
+        ]
+
+        for url in ip_get_list:
+            ip = self._get_ip(url)
+            if ip is not None:
+                return ip
+        logger.error("NETWORK ERROR!!!")
+        return None
 
     def get_record(self):
         response = self.post_json("/Record.List", dict(
@@ -154,9 +168,8 @@ class DDNSLoader:
             time.sleep(30)
 
     def refresh(self):
-        ip = self.get_ip()
+        ip = self.get_id()
         if ip is None:
-            logger.warn("IP IS NONE!")
             return
 
         logger.debug("IP:[%s,%s]" % (self._current_ip, ip))
