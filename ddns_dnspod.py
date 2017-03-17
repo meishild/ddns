@@ -120,7 +120,6 @@ class DDNSLoader:
     def get_id(self):
         ip_get_list = [
             "http://ip.chinaz.com/getip.aspx",
-            "http://checkip.dyndns.org",
             "http://ip.taobao.com/service/getIpInfo2.php?ip=myip"
         ]
 
