@@ -102,7 +102,6 @@ class DDNSLoader:
                 self._domain_id = domain_dict['id']
 
     def get_ip(self):
-        return "122.233.202.235"
         try:
             response = urllib.urlopen("http://ip.chinaz.com/getip.aspx").read()
             logger.debug("GET IP RESPONSE:%s" % response)
