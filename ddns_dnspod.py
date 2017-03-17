@@ -163,6 +163,7 @@ class DDNSLoader:
         if self._current_ip != ip:
             for sub_domain, record in self._record_dict.items():
                 if ip == record['value']:
+                    logger.debug("SAME IP [%s]. DON'T NEED UPLOAD" % ip)
                     continue
                 if self.ddns(ip, record['id'], sub_domain):
                     self._current_ip = ip
