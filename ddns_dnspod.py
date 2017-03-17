@@ -93,6 +93,7 @@ class DDNSLoader:
             return
 
         domains = response['json']['domains']
+        logger.debug("[DNSPOD]LOAD DOMAINS:%s" % domains)
         if len(domains) < 1:
             logger.error("[DNSPOD]没有域名配置,请先在dnspod配置域名")
             return
