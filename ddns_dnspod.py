@@ -159,6 +159,7 @@ class DDNSLoader:
             logger.warn("IP IS NONE!")
             return
 
+        logger.debug("IP:[%s,%s]", (self._current_ip, ip))
         if self._current_ip != ip:
             for sub_domain, record in self._record_dict.items():
                 if ip == record['value']:
