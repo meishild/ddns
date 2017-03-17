@@ -156,6 +156,7 @@ class DDNSLoader:
     def refresh(self):
         ip = self.get_ip()
         if ip is None:
+            logger.warn("IP IS NONE!")
             return
 
         if self._current_ip != ip:
@@ -164,7 +165,7 @@ class DDNSLoader:
                     continue
                 if self.ddns(ip, record['id'], sub_domain):
                     self._current_ip = ip
-                    logger.info("[DNSPOD]CHANGE %s DDNS IP [%s --> %s]" % (sub_domain, self._current_ip, ip))
+                    logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, self._current_ip, ip))
                 else:
                     logger.info("[DNSPOD]REFRESH DDNS FAIL")
         else:
