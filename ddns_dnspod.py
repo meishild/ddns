@@ -22,17 +22,17 @@ logger = logging.getLogger('[PythonService]')
 
 
 class DDNSLoader:
-    def __init__(self):
+    def __init__(self, config_path):
         self._domain_id = None
         self._current_ip = None
         self._record_dict = {}
         self._config = None
         self._login_token = None
-        self.load_config()
+        self.load_config(config_path)
         self.init_logger()
 
-    def load_config(self):
-        path = os.path.split(os.path.realpath(__file__))[0] + '/config.cnf'
+    def load_config(self, config_path):
+        path = '%s/config.cnf' % config_path
         self._config = ConfigParser.ConfigParser()
         if not os.path.exists(path):
             print("Config is not exist!!!")
@@ -225,5 +225,6 @@ def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='dev/null'):
 
 
 if __name__ == '__main__':
+    path = os.path.split(os.path.realpath(__file__))[0]
     daemonize()
-    DDNSLoader().start()
+    DDNSLoader(path).start()

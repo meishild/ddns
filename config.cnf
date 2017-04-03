@@ -1,8 +1,8 @@
 [config]
 domain=icdoit.com
 sub_domain=@,www
-log_path=/var/log
-log_level=info
+log_path=/Users/haiyang.song
+log_level=debug
 
 [dnspod]
 id=16540
