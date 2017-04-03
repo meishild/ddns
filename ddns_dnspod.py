@@ -29,15 +29,14 @@ class DDNSLoader:
         self._config = None
         self._login_token = None
         self.load_config()
-        self._is_alive = True
         self.init_logger()
 
     def load_config(self):
         path = os.path.split(os.path.realpath(__file__))[0] + '/config.cnf'
         self._config = ConfigParser.ConfigParser()
         if not os.path.exists(path):
-            print("配置文件不存在!!!")
-            sys.exit()
+            print("Config is not exist!!!")
+            sys.exit(0)
         self._config.read(path)
         self._login_token = ("%s,%s" % (self._config.get("dnspod", "id"), self._config.get("dnspod", "token")))
 
@@ -89,14 +88,14 @@ class DDNSLoader:
         ))
         assert response['status'] == 200
         if "domains" not in response['json']:
-            logger.error("[DNSPOD]登陆异常:" + response['json']['status']['message'])
-            return
+            logger.error("[DNSPOD]Login Error:" + response['json']['status']['message'])
+            sys.exit(0)
 
         domains = response['json']['domains']
         logger.debug("[DNSPOD]LOAD DOMAINS:%s" % domains)
         if len(domains) < 1:
-            logger.error("[DNSPOD]没有域名配置,请先在dnspod配置域名")
-            return
+            logger.error("[DNSPOD]not Config domain!!")
+            sys.exit(0)
 
         for domain_dict in response['json']['domains']:
             if self._config.get("config", "domain") == domain_dict['punycode']:
@@ -149,12 +148,13 @@ class DDNSLoader:
             ip=ip,
             record_id=record_id,
             sub_domain=sub_domain,
-            record_line="默认",
+            record_line="Default",
         ))
         return response['status'] == 200
 
     def start(self):
-        while self._is_alive:
+        logger.info("DDNS SERVER START!")
+        while True:
             try:
                 if self._domain_id is None:
                     self.get_domain()
@@ -187,9 +187,43 @@ class DDNSLoader:
         else:
             logger.debug("SAME IP [%s]. DON'T NEED UPLOAD" % ip)
 
-    def stop(self):
-        self._is_alive = False
+
+def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='dev/null'):
+    """
+    Fork当前进程为守护进程，重定向标准文件描述符（默认情况下定向到/dev/null）
+    """
+    # Perform first fork.
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)  # first parent out
+    except OSError, e:
+        sys.stderr.write("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror))
+        sys.exit(1)
+
+    # 从母体环境脱离
+    os.chdir("/")
+    os.umask(0)
+    os.setsid()
+    # 执行第二次fork
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)  # second parent out
+    except OSError, e:
+        sys.stderr.write("fork #2 failed: (%d) %s]n" % (e.errno, e.strerror))
+        sys.exit(1)
+
+    # 进程已经是守护进程了，重定向标准文件描述符
+    for f in sys.stdout, sys.stderr: f.flush()
+    si = file(stdin, 'r')
+    so = file(stdout, 'a+')
+    se = file(stderr, 'a+', 0)
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
 
 
 if __name__ == '__main__':
+    daemonize()
     DDNSLoader().start()

@@ -1,10 +1,10 @@
 [config]
 domain=icdoit.com
 sub_domain=@,www
-log_path=.
-log_level=info
+log_path=/Users/haiyang.song
+log_level=debug
 
 [dnspod]
 id=16540
 host=dnsapi.cn
-token=
+token=5bfa7d4ee51330cdd6d0bce3bc17febf
