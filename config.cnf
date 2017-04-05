@@ -1,8 +1,9 @@
 [config]
 domain=icdoit.com
 sub_domain=@,www
-log_path=/var/log
+log_path=/tmp/ddns.log
 log_level=debug
+pid=/tmp/ddns.pid
 
 [dnspod]
 id=16540
