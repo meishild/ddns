@@ -1,11 +1,11 @@
 [config]
-domain=icdoit.com
+domain=
 sub_domain=@,www
 log_path=/tmp/ddns.log
 log_level=debug
 pid=/tmp/ddns.pid
 
 [dnspod]
-id=16540
+id=
 host=dnsapi.cn
 token=
