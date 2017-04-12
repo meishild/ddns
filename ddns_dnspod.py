@@ -95,7 +95,6 @@ class DDNSLoader:
         domain = self._config.get("config", "domain")
         self._cli = DnspodClient(login_token, host, domain)
 
-        self._current_ip = None
         self._domain_id = None
         self._record_dict = {}
 
@@ -104,10 +103,7 @@ class DDNSLoader:
         if ip is None:
             return
 
-        logger.debug("IP:[%s,%s]" % (self._current_ip, ip))
-        if self._current_ip == ip:
-            logger.debug("SAME IP [%s]. DON'T NEED UPLOAD" % ip)
-            return
+        logger.debug("IP:%s" % ip)
 
         for sub_domain, record in self._record_dict.items():
             if ip == record['value']:
@@ -115,8 +111,7 @@ class DDNSLoader:
                 continue
 
             if self._cli.set_ddns(ip, record['id'], self._domain_id, sub_domain):
-                self._current_ip = ip
-                logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, self._current_ip, ip))
+                logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, record['value'], ip))
             else:
                 logger.error("[DNSPOD]REFRESH DDNS FAIL")
 
