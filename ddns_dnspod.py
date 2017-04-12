@@ -82,7 +82,7 @@ class DnspodClient:
             sub_domain=sub_domain,
             record_line="默认",
         ))
-        logger.info(response.items())
+        logger.debug(response.get("json"))
         return response['status'] == 200
 
 
@@ -96,7 +96,6 @@ class DDNSLoader:
         self._cli = DnspodClient(login_token, host, domain)
 
         self._domain_id = None
-        self._record_dict = {}
 
     def __refresh(self):
         ip = localip.get_id()
@@ -105,7 +104,8 @@ class DDNSLoader:
 
         logger.debug("IP:%s" % ip)
 
-        for sub_domain, record in self._record_dict.items():
+        record_dict = self._cli.get_record(self._domain_id, self._config.get("config", "sub_domain"))
+        for sub_domain, record in record_dict.items():
             if ip == record['value']:
                 logger.debug("SAME IP [%s]. DON'T NEED UPLOAD" % ip)
                 continue
@@ -118,7 +118,6 @@ class DDNSLoader:
     def execute(self):
         logger.info("DDNS SERVER START!")
         self._domain_id = self._cli.get_domain_id()
-        self._record_dict = self._cli.get_record(self._domain_id, self._config.get("config", "sub_domain"))
 
         while True:
             try:
