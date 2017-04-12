@@ -19,6 +19,20 @@ from net import localip, requests
 logger = logging.getLogger("SERVICE")
 
 
+def _dnspod_post(host, req_api, params):
+    try:
+        response = requests.post_json(host, req_api, params)
+        if response.get("status") == 200:
+            if "json" in response and "status" in response.get("json"):
+                data = response.get("json").get("status")
+                if data.get("code") != "1":
+                    logger.error("REQUEST BIZ ERROR:%s" % data.get("message"))
+        return response
+    except Exception as _:
+        logger.error("REQUEST %s/%s ERROR!" % (host, req_api))
+        sys.exit(0)
+
+
 class DnspodClient:
     def __init__(self, login_token, cli_host, cli_domain):
         self._login_token = login_token
@@ -26,7 +40,7 @@ class DnspodClient:
         self._cli_domain = cli_domain
 
     def get_domain_id(self):
-        response = requests.post_json(self._cli_host, "/Domain.List", dict(
+        response = _dnspod_post(self._cli_host, "/Domain.List", dict(
             login_token=self._login_token,
             format="json"
         ))
@@ -46,7 +60,7 @@ class DnspodClient:
                 return domain_dict['id']
 
     def get_record(self, domain_id, cli_sub_domain):
-        response = requests.post_json(self._cli_host, "/Record.List", dict(
+        response = _dnspod_post(self._cli_host, "/Record.List", dict(
             login_token=self._login_token,
             format="json",
             domain_id=domain_id
@@ -59,15 +73,16 @@ class DnspodClient:
         return _record_dict
 
     def set_ddns(self, ip, record_id, domain_id, sub_domain):
-        response = requests.post_json(self._cli_host, "/Record.Ddns", dict(
+        response = _dnspod_post(self._cli_host, "/Record.Ddns", dict(
             login_token=self._login_token,
             format="json",
             domain_id=domain_id,
             ip=ip,
             record_id=record_id,
             sub_domain=sub_domain,
-            record_line="Default",
+            record_line="默认",
         ))
+        logger.info(response.items())
         return response['status'] == 200
 
 
@@ -100,11 +115,10 @@ class DDNSLoader:
                 continue
 
             if self._cli.set_ddns(ip, record['id'], self._domain_id, sub_domain):
+                self._current_ip = ip
                 logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, self._current_ip, ip))
             else:
                 logger.error("[DNSPOD]REFRESH DDNS FAIL")
-
-            self._current_ip = ip
 
     def execute(self):
         logger.info("DDNS SERVER START!")
