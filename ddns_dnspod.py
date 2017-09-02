@@ -122,9 +122,9 @@ class DDNSLoader:
         while True:
             try:
                 self.__refresh()
+                time.sleep(30)
             except Exception as e:
                 logger.error(e)
-            time.sleep(30)
 
 
 if __name__ == '__main__':
