@@ -10,27 +10,28 @@
 import httplib
 import json
 import urllib
-
-import sys
-
 import logging
+from time import sleep
 
 logger = logging.getLogger('NETWORK')
 
 
-def post_json(host, req_api, params):
+def post_json(host, req_api, params, retry_times=3):
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/json"}
-    try:
-        conn = httplib.HTTPSConnection(host)
-        conn.request("POST", req_api, urllib.urlencode(params), headers)
-        response = conn.getresponse()
-        date = response.read()
-    except Exception as _:
-        logger.error("REQUEST ERROR:%s" % req_api)
-        sys.exit(0)
+    for i in range(0, retry_times, 1):
 
-    return dict(
-        status=response.status,
-        reason=response.reason,
-        json=json.loads(date)
-    )
+        try:
+            conn = httplib.HTTPSConnection(host)
+            conn.request("POST", req_api, urllib.urlencode(params), headers)
+            response = conn.getresponse()
+            date = response.read()
+            return True, dict(
+                status=response.status,
+                reason=response.reason,
+                json=json.loads(date)
+            )
+
+        except Exception as _:
+            logger.error("REQUEST ERROR:%s" % req_api)
+        sleep(3)
+    return False, None

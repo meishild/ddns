@@ -8,7 +8,6 @@
 # python_version  :2.7.7
 # description     :
 # ==============================================================================
-import sys
 import time
 import os
 
@@ -20,17 +19,16 @@ logger = logging.getLogger("SERVICE")
 
 
 def _dnspod_post(host, req_api, params):
-    try:
-        response = requests.post_json(host, req_api, params)
-        if response.get("status") == 200:
-            if "json" in response and "status" in response.get("json"):
-                data = response.get("json").get("status")
-                if data.get("code") != "1":
-                    logger.error("REQUEST BIZ ERROR:%s" % data.get("message"))
-        return response
-    except Exception as _:
-        logger.error("REQUEST %s/%s ERROR!" % (host, req_api))
-        sys.exit(0)
+    status, response = requests.post_json(host, req_api, params)
+    if not status:
+        raise Exception("REQUEST DNSPOD ERROR!")
+
+    if response.get("status") == 200:
+        if "json" in response and "status" in response.get("json"):
+            data = response.get("json").get("status")
+            if data.get("code") != "1":
+                logger.error("REQUEST BIZ ERROR:%s" % data.get("message"))
+    return response
 
 
 class DnspodClient:
@@ -47,13 +45,11 @@ class DnspodClient:
         assert response['status'] == 200
         if "domains" not in response['json']:
             logger.error("[DNSPOD]Login Error:" + response['json']['status']['message'])
-            sys.exit(0)
 
         domains = response['json']['domains']
         logger.debug("[DNSPOD]LOAD DOMAINS:%s" % domains)
         if len(domains) < 1:
             logger.error("[DNSPOD]not Config domain!!")
-            sys.exit(0)
 
         for domain_dict in response['json']['domains']:
             if self._cli_domain == domain_dict['punycode']:
@@ -117,10 +113,11 @@ class DDNSLoader:
 
     def execute(self):
         logger.info("DDNS SERVER START!")
-        self._domain_id = self._cli.get_domain_id()
-
         while True:
             try:
+                if self._domain_id is None:
+                    self._domain_id = self._cli.get_domain_id()
+
                 self.__refresh()
                 time.sleep(30)
             except Exception as e:
