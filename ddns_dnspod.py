@@ -113,18 +113,31 @@ class DDNSLoader:
 
     def execute(self):
         logger.info("DDNS SERVER START!")
-        while True:
-            try:
-                if self._domain_id is None:
-                    self._domain_id = self._cli.get_domain_id()
 
-                self.__refresh()
-                time.sleep(30)
-            except Exception as e:
-                logger.error(e)
+        try:
+            if self._domain_id is None:
+                self._domain_id = self._cli.get_domain_id()
+
+            self.__refresh()
+            time.sleep(30)
+        except Exception as e:
+            logger.error(e)
 
 
 if __name__ == '__main__':
-    path = os.path.split(os.path.realpath(__file__))[0]
-    loader = DDNSLoader(path)
+    import ConfigParser
+    import sys
+    import log
+
+    config = ConfigParser.ConfigParser()
+    try:
+        config.read('%s/config.cnf.bak' % os.path.split(os.path.realpath(__file__))[0])
+    except Exception as _:
+        sys.stderr.write("Config is not exist!!!")
+
+    log_path = config.get("config", "log_path")
+    log_level = config.get("config", "log_level")
+    log.set_default(log_path, log_level)
+
+    loader = DDNSLoader(config)
     loader.execute()
