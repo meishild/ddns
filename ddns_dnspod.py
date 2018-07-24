@@ -165,29 +165,33 @@ class DnspodClient:
         logger.debug(response)
         return response.get("status").get("code") == "1"
 
+    def refresh_ddns(self, ip, sub_domain):
+        domain_id = self.get_domain_id()
+
+        record_dict = self.get_record(domain_id, sub_domain)
+        for sub_domain, record in record_dict.items():
+            if ip == record['value']:
+                logger.info("[DNSPOD]SAME IP [%s -> %s]. DON'T NEED UPLOAD" % (sub_domain, ip))
+                continue
+
+            if self.set_ddns(ip, record['id'], domain_id, sub_domain):
+                logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, record['value'], ip))
+            else:
+                logger.error("[DNSPOD]REFRESH DDNS FAIL")
+
 
 def refresh_ddns(config):
     login_token = "%s,%s" % (config.get("dnspod", "id"), config.get("dnspod", "token"))
     host = config.get("dnspod", "host")
     domain = config.get("config", "domain")
+    sub_domain = config.get("config", "sub_domain")
     cli = DnspodClient(login_token, host, domain)
-
-    domain_id = cli.get_domain_id()
 
     ip = get_id()
     if ip is None:
+        logger.error("[DNSPOD]IP IS NULL")
         return
-
-    record_dict = cli.get_record(domain_id, config.get("config", "sub_domain"))
-    for sub_domain, record in record_dict.items():
-        if ip == record['value']:
-            logger.info("[DNSPOD]SAME IP [%s -> %s]. DON'T NEED UPLOAD" % (sub_domain, ip))
-            continue
-
-        if cli.set_ddns(ip, record['id'], domain_id, sub_domain):
-            logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, record['value'], ip))
-        else:
-            logger.error("[DNSPOD]REFRESH DDNS FAIL")
+    cli.refresh_ddns(ip, sub_domain)
 
 
 if __name__ == '__main__':
@@ -198,7 +202,6 @@ if __name__ == '__main__':
         exit(0)
 
     import ConfigParser
-
     config = ConfigParser.ConfigParser()
     try:
         config.read(sys.argv[1])
