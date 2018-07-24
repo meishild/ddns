@@ -10,7 +10,6 @@
 # ==============================================================================
 import httplib
 import json
-import os
 import re
 import socket
 import urllib
