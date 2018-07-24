@@ -1,14 +1,16 @@
 # ddns
-通过dnspod动态修改域名对应的ip。
-需要在dnspod申请token
+通过ubnt配置ddns
 
-## CMD
-start: `python ddns.py start`
+需要配置ddns命令执行：
 
-restart: `python ddns.py restart`
+```cmd
+configure
 
-stop: `python ddns.py stop`
+set system task-scheduler task task_ddns
+set system task-scheduler task task_ddns executable path /usr/bin/python
+set system task-scheduler task task_ddns executable arguments "/home/ubnt/ddns/ddns_dnspod.py"
+set system task-scheduler task task_ddns interval 1m
 
-## DEBUG
-debug模式不会创建pid文件，只会在前台执行不会进行守护。
-`python ddns.py debug'
+commit
+save
+```
