@@ -119,7 +119,6 @@ class DDNSLoader:
                 self._domain_id = self._cli.get_domain_id()
 
             self.__refresh()
-            time.sleep(30)
         except Exception as e:
             logger.error(e)
 
