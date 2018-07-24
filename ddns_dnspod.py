@@ -13,7 +13,6 @@ import json
 import re
 import socket
 import urllib
-from time import sleep
 import logging
 
 logger = logging.getLogger("SERVICE")
@@ -47,83 +46,32 @@ def set_default(log_path="/tmp/temp.log", level="INFO"):
     return set_logger
 
 
-def _request_get_ip(url):
-    try:
-        response = urllib.urlopen(url).read()
-        logger.debug("GET IP RESPONSE:%s" % response)
-        pattern = re.compile(r'(?<![\.\d])(?:\d{1,3}\.){3}\d{1,3}(?![\.\d])')
-        find_list = pattern.findall(response)
-        if len(find_list) != 1:
-            logger.warn("NOT GET GATEWAY IP.")
-            return None
-        return find_list[0]
-    except Exception as e:
-        logger.error("[GET IP ERROR]" + e.message)
-        return None
-
-
-def post_json(host, req_api, params, retry_times=3):
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/json"}
-    for i in range(0, retry_times, 1):
-
-        try:
-            conn = httplib.HTTPSConnection(host, timeout=2)
-            conn.request("POST", req_api, urllib.urlencode(params), headers)
-            response = conn.getresponse()
-            date = response.read()
-            return True, dict(
-                status=response.status,
-                reason=response.reason,
-                json=json.loads(date)
-            )
-
-        except Exception as _:
-            logger.error("REQUEST ERROR:%s" % req_api)
-        sleep(3)
-    return False, None
-
-
-def get_id():
-    ip_get_list = [
-        "http://ip.chinaz.com/getip.aspx",
-        "http://ip.taobao.com/service/getIpInfo2.php?ip=myip"
-    ]
-
-    for url in ip_get_list:
-        ip = _request_get_ip(url)
-        if ip is not None:
-            return ip
-    logger.error("NETWORK ERROR!!!")
-    return None
-
-
-def _dnspod_post(host, req_api, params):
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/json"}
-
-    try:
-        conn = httplib.HTTPSConnection(host, timeout=2)
-        conn.request("POST", req_api, urllib.urlencode(params), headers)
-        response = conn.getresponse()
-        json_data = json.loads(response.read())
-
-        if response.status == 200:
-            if "status" in json_data:
-                if json_data.get("status").get("code") != "1":
-                    logger.error("REQUEST ERROR:%s" % json_data.get("message"))
-        return json_data
-
-    except Exception as _:
-        logger.error("REQUEST ERROR:%s" % req_api)
-
-
 class DnspodClient:
     def __init__(self, login_token, cli_host, cli_domain):
         self._login_token = login_token
         self._cli_host = cli_host
         self._cli_domain = cli_domain
 
+    def _dnspod_post(self, host, req_api, params):
+        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/json"}
+
+        try:
+            conn = httplib.HTTPSConnection(host, timeout=2)
+            conn.request("POST", req_api, urllib.urlencode(params), headers)
+            response = conn.getresponse()
+            json_data = json.loads(response.read())
+
+            if response.status == 200:
+                if "status" in json_data:
+                    if json_data.get("status").get("code") != "1":
+                        logger.error("REQUEST ERROR:%s" % json_data.get("message"))
+            return json_data
+
+        except Exception as _:
+            logger.error("REQUEST ERROR:%s" % req_api)
+
     def get_domain_id(self):
-        response = _dnspod_post(self._cli_host, "/Domain.List", dict(
+        response = self._dnspod_post(self._cli_host, "/Domain.List", dict(
             login_token=self._login_token,
             format="json"
         ))
@@ -140,7 +88,7 @@ class DnspodClient:
                 return domain_dict['id']
 
     def get_record(self, domain_id, cli_sub_domain):
-        response = _dnspod_post(self._cli_host, "/Record.List", dict(
+        response = self._dnspod_post(self._cli_host, "/Record.List", dict(
             login_token=self._login_token,
             format="json",
             domain_id=domain_id
@@ -153,7 +101,7 @@ class DnspodClient:
         return _record_dict
 
     def set_ddns(self, ip, record_id, domain_id, sub_domain):
-        response = _dnspod_post(self._cli_host, "/Record.Ddns", dict(
+        response = self._dnspod_post(self._cli_host, "/Record.Ddns", dict(
             login_token=self._login_token,
             format="json",
             domain_id=domain_id,
@@ -180,14 +128,36 @@ class DnspodClient:
                 logger.error("[DNSPOD]REFRESH DDNS FAIL")
 
 
-def refresh_ddns(config):
+def _get_id():
+    ip_get_list = [
+        "http://ip.chinaz.com/getip.aspx",
+        "http://ip.taobao.com/service/getIpInfo2.php?ip=myip"
+    ]
+
+    for url in ip_get_list:
+        try:
+            response = urllib.urlopen(url).read()
+            logger.debug("GET IP RESPONSE:%s" % response)
+            pattern = re.compile(r'(?<![\.\d])(?:\d{1,3}\.){3}\d{1,3}(?![\.\d])')
+            find_list = pattern.findall(response)
+            if len(find_list) != 1:
+                logger.warn("NOT GET GATEWAY IP.")
+                continue
+            return find_list[0]
+        except Exception as e:
+            logger.error("[GET IP ERROR]" + e.message)
+    logger.error("NETWORK ERROR!!!")
+    return None
+
+
+def _refresh_ddns(config):
     login_token = "%s,%s" % (config.get("dnspod", "id"), config.get("dnspod", "token"))
     host = config.get("dnspod", "host")
     domain = config.get("config", "domain")
     sub_domain = config.get("config", "sub_domain")
     cli = DnspodClient(login_token, host, domain)
 
-    ip = get_id()
+    ip = _get_id()
     if ip is None:
         logger.error("[DNSPOD]IP IS NULL")
         return
@@ -202,6 +172,7 @@ if __name__ == '__main__':
         exit(0)
 
     import ConfigParser
+
     config = ConfigParser.ConfigParser()
     try:
         config.read(sys.argv[1])
@@ -212,4 +183,4 @@ if __name__ == '__main__':
     log_level = config.get("config", "log_level")
     set_default(log_path, log_level)
 
-    refresh_ddns(config)
+    _refresh_ddns(config)
