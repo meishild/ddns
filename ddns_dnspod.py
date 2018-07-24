@@ -8,14 +8,15 @@
 # python_version  :2.7.7
 # description     :
 # ==============================================================================
-import time
 import os
-
 import logging
+import socket
 
 from net import localip, requests
 
 logger = logging.getLogger("SERVICE")
+
+socket.setdefaulttimeout(2.0)
 
 
 def _dnspod_post(host, req_api, params):

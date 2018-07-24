@@ -12,7 +12,7 @@ import urllib
 
 import logging
 
-logger = logging.getLogger('NETWORK')
+logger = logging.getLogger('SERVICE')
 
 
 def _request_get_ip(url):

@@ -21,7 +21,7 @@ def post_json(host, req_api, params, retry_times=3):
     for i in range(0, retry_times, 1):
 
         try:
-            conn = httplib.HTTPSConnection(host)
+            conn = httplib.HTTPSConnection(host, timeout=2)
             conn.request("POST", req_api, urllib.urlencode(params), headers)
             response = conn.getresponse()
             date = response.read()
