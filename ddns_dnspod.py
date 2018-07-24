@@ -166,43 +166,28 @@ class DnspodClient:
         return response.get("status").get("code") == "1"
 
 
-class DDNSLoader:
-    def __init__(self, config):
-        self._config = config
+def refresh_ddns(config):
+    login_token = "%s,%s" % (config.get("dnspod", "id"), config.get("dnspod", "token"))
+    host = config.get("dnspod", "host")
+    domain = config.get("config", "domain")
+    cli = DnspodClient(login_token, host, domain)
 
-        login_token = "%s,%s" % (self._config.get("dnspod", "id"), self._config.get("dnspod", "token"))
-        host = self._config.get("dnspod", "host")
-        domain = self._config.get("config", "domain")
-        self._cli = DnspodClient(login_token, host, domain)
+    domain_id = cli.get_domain_id()
 
-        self._domain_id = None
+    ip = get_id()
+    if ip is None:
+        return
 
-    def __refresh(self):
-        ip = get_id()
-        if ip is None:
-            return
+    record_dict = cli.get_record(domain_id, config.get("config", "sub_domain"))
+    for sub_domain, record in record_dict.items():
+        if ip == record['value']:
+            logger.info("[DNSPOD]SAME IP [%s -> %s]. DON'T NEED UPLOAD" % (sub_domain, ip))
+            continue
 
-        record_dict = self._cli.get_record(self._domain_id, self._config.get("config", "sub_domain"))
-        for sub_domain, record in record_dict.items():
-            if ip == record['value']:
-                logger.info("[DNSPOD]SAME IP [%s -> %s]. DON'T NEED UPLOAD" % (sub_domain, ip))
-                continue
-
-            if self._cli.set_ddns(ip, record['id'], self._domain_id, sub_domain):
-                logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, record['value'], ip))
-            else:
-                logger.error("[DNSPOD]REFRESH DDNS FAIL")
-
-    def execute(self):
-        logger.info("DDNS SERVER START!")
-
-        try:
-            if self._domain_id is None:
-                self._domain_id = self._cli.get_domain_id()
-
-            self.__refresh()
-        except Exception as e:
-            logger.error(e)
+        if cli.set_ddns(ip, record['id'], domain_id, sub_domain):
+            logger.info("[DNSPOD]REFRESH %s DDNS IP [%s --> %s]" % (sub_domain, record['value'], ip))
+        else:
+            logger.error("[DNSPOD]REFRESH DDNS FAIL")
 
 
 if __name__ == '__main__':
@@ -224,5 +209,4 @@ if __name__ == '__main__':
     log_level = config.get("config", "log_level")
     set_default(log_path, log_level)
 
-    loader = DDNSLoader(config)
-    loader.execute()
+    refresh_ddns(config)
