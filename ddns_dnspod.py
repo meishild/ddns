@@ -207,12 +207,17 @@ class DDNSLoader:
 
 
 if __name__ == '__main__':
-    import ConfigParser
     import sys
+
+    if sys.argv.__len__() != 2:
+        print("Need config file Path.\n python ddns_dnspod.py config.cnf")
+        exit(0)
+
+    import ConfigParser
 
     config = ConfigParser.ConfigParser()
     try:
-        config.read('%s/config.cnf.bak' % os.path.split(os.path.realpath(__file__))[0])
+        config.read(sys.argv[1])
     except Exception as _:
         sys.stderr.write("Config is not exist!!!")
 
