@@ -130,13 +130,15 @@ class DnspodClient:
 
 def _get_id():
     ip_get_list = [
-        "http://ip.chinaz.com/getip.aspx",
-        "http://ip.taobao.com/service/getIpInfo2.php?ip=myip"
+        "http://ip.sb",
     ]
+    import urllib2
 
     for url in ip_get_list:
         try:
-            response = urllib.urlopen(url).read()
+            req = urllib2.Request(url)
+            req.add_header("User-Agent", "curl/7.54.0")
+            response = urllib2.urlopen(req).read()
             logger.debug("GET IP RESPONSE:%s" % response)
             pattern = re.compile(r'(?<![\.\d])(?:\d{1,3}\.){3}\d{1,3}(?![\.\d])')
             find_list = pattern.findall(response)
@@ -166,22 +168,21 @@ def _refresh_ddns(config):
 
 if __name__ == '__main__':
     import sys, os
-    local_path = sys.path[0]
-    print(local_path)
 
+    local_path = sys.path[0]
     config_path = None
 
-    if "config.cnf" in os.listdir(local_path):
-        config_path = local_path + "/" + "config.cnf"
-
-    if config_path is None and sys.argv.__len__() != 2:
-        print("Need config file Path.\n python ddns_dnspod.py config.cnf")
-        exit(0)
-    if config_path is None:
+    if sys.argv.__len__() == 2:
         config_path = sys.argv[1]
 
-    sys.stdout.write("Config Path:" + config_path)
-    
+    if config_path is None and "config.cnf" in os.listdir(local_path):
+        config_path = local_path + "/" + "config.cnf"
+
+    if config_path is None:
+        print("Need config file Path.\n python ddns_dnspod.py config.cnf")
+        exit(0)
+
+    sys.stdout.write("Use Config Path:%s\n" % config_path)
 
     import ConfigParser
 
