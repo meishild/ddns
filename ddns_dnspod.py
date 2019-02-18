@@ -165,17 +165,28 @@ def _refresh_ddns(config):
 
 
 if __name__ == '__main__':
-    import sys
+    import sys, os
+    local_path = os.getcwd()
 
-    if sys.argv.__len__() != 2:
+    config_path = None
+
+    if "config.cnf" in os.listdir(local_path):
+        config_path = local_path + "/" + "config.cnf"
+
+    if config_path is None and sys.argv.__len__() != 2:
         print("Need config file Path.\n python ddns_dnspod.py config.cnf")
         exit(0)
+    if config_path is None:
+        config_path = sys.argv[1]
+
+    sys.stdout.write("Config Path:" + config_path)
+    
 
     import ConfigParser
 
     config = ConfigParser.ConfigParser()
     try:
-        config.read(sys.argv[1])
+        config.read(config_path)
     except Exception as _:
         sys.stderr.write("Config is not exist!!!")
 
