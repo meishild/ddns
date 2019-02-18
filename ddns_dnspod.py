@@ -12,7 +12,7 @@ import httplib
 import json
 import re
 import socket
-import urllib
+import urllib2
 import logging
 
 logger = logging.getLogger("SERVICE")
@@ -57,6 +57,7 @@ class DnspodClient:
 
         try:
             conn = httplib.HTTPSConnection(host, timeout=2)
+            import urllib
             conn.request("POST", req_api, urllib.urlencode(params), headers)
             response = conn.getresponse()
             json_data = json.loads(response.read())
@@ -132,7 +133,6 @@ def _get_id():
     ip_get_list = [
         "http://ip.sb",
     ]
-    import urllib2
 
     for url in ip_get_list:
         try:
