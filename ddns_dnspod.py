@@ -166,7 +166,8 @@ def _refresh_ddns(config):
 
 if __name__ == '__main__':
     import sys, os
-    local_path = os.getcwd()
+    local_path = sys.path[0]
+    print(local_path)
 
     config_path = None
 
